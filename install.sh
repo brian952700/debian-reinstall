@@ -91,6 +91,8 @@ main() {
     sed -i \
         -e "s|^confhome=https://raw.githubusercontent.com/bin456789/reinstall/main$|confhome=https://raw.githubusercontent.com/bin456789/reinstall/$ENGINE_COMMIT|" \
         -e "s|^confhome_cn=https://cnb.cool/bin456789/reinstall/-/git/raw/main$|confhome_cn=https://cnb.cool/bin456789/reinstall/-/git/raw/$ENGINE_COMMIT|" "$engine_file"
+    # Upstream prints the chosen password in its final summary. Hide that output.
+    sed -i 's/echo "Password: \$password/echo "Password: [hidden]/g' "$engine_file"
     [[ ! -L /root/.debian-reinstall ]] || die '引擎目录不能是符号链接'
     mkdir -p /root/.debian-reinstall
     chmod 700 /root/.debian-reinstall
