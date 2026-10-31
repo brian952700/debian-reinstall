@@ -1,0 +1,15 @@
+name: Check
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and lint
+        run: |
+          bash -n install.sh
+          shellcheck install.sh
+      - name: Safe interaction tests
+        run: sudo python3 tests/interaction.py
