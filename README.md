@@ -1,2 +1,55 @@
-# debian-reinstall
-Debian 13 一键重装：交互设置 SSH 端口与 root 密码
+# Debian 一键重装
+
+中文交互入口，使用 [bin456789/reinstall](https://github.com/bin456789/reinstall) 完成 VPS 系统重装，提示设置 **SSH 端口**和 **root 密码**。
+
+## 使用
+
+在需要重装的 Linux 服务器上，以 root 执行：
+
+```bash
+curl -fL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/brian952700/debian-reinstall/main/install.sh -o install.sh && bash install.sh
+```
+
+先试运行输入流程（不下载引擎、不修改系统）：
+
+```bash
+bash install.sh --dry-run
+```
+
+依次输入 Debian 主版本（默认 13）、SSH 端口（默认 22）、两遍 root 密码。密码隐藏输入，至少 12 字符，支持空格与特殊符号。输入 `ERASE` 后准备重装，成功后手动执行 `reboot` 开始。**清空的是系统整块硬盘，包含其他分区**。本项目不会替你执行重启。
+
+## 支持范围
+
+- 当前安装版本：**Debian 13**。固定引擎目前最高支持 13，不会把未支持的 Debian 14 等版本伪装成可用。后续支持 13 以上版本时，需同步更新引擎 commit、SHA256、支持列表并重新测试。
+- Linux 上的 x86_64、aarch64；引擎支持 BIOS/UEFI、动态及静态网络。特殊云网络、RAID、加密系统盘等环境必须先在同类测试机验证。
+- 不支持 LXC、OpenVZ、Docker/Podman 容器。需完整虚拟机或物理服务器及 root 权限。
+- 需要 Bash、curl、sha256sum、sed、mktemp 和能访问 GitHub/系统镜像源的网络；引擎会额外安装必要组件。
+- 底层使用 Debian 网络安装。俗称“一键 DD”，此入口不接受任意第三方磁盘镜像。
+
+## 执行前
+
+1. 备份整块系统盘上的数据，准备商家 VNC、串口或救援模式。
+2. 在云安全组和外部防火墙放行所选 SSH TCP 端口；脚本不能修改云厂商安全组。原 SSH 会在重装时断开。
+3. 阅读引擎输出确认网络与目标磁盘；多盘或特殊网络机器尤其需要核对。
+
+重启前取消已安排的重装：
+
+```bash
+bash install.sh --cancel
+```
+
+取消使用本脚本保存在 `/root/.debian-reinstall/engine.sh` 的同一版本引擎，仅取消引导重装安排，不还原已安装的依赖或所有准备文件。**已经开始覆盖磁盘后不能靠此命令恢复数据。**
+
+重装后：`ssh -p 你设置的端口 root@服务器IP`，使用输入的密码登录。随后执行 `apt update && apt full-upgrade`。
+
+## 引擎与密码处理
+
+固定上游 commit：`54fae2067557b3c0ca49e7c9ce03bca63c793f8c`。下载后校验 SHA256，并将引擎两个资源基础 URL 固定到同一 commit，防止主分支更新造成文件不兼容。系统包与发行版镜像仍来自在线源。
+
+本入口不使用 `--password 明文`，密码通过文件描述符传入独立 Bash 进程中的变量；不会放进命令行参数、导出环境变量、日志或本入口的持久文件。上游会生成并保存安装所需的密码散列和安装配置，系统 root 仍可访问安装相关资料。请勿使用 `bash -x`、终端录制或分享引擎日志/安装文件；重装后妥善处理安装残留。
+
+本项目是独立交互封装，安装、网络识别、磁盘选择和引导由上游实现；上游代码未内置于本仓库，使用时遵守其 GPL-3.0 许可。
+
+## 验证
+
+GitHub Actions 执行 Bash 语法检查、ShellCheck 和不触碰磁盘的交互测试，验证端口、版本、密码重试、取消与秘密不出现在输出。CI 不执行真实重装。正式使用前仍需在可丢弃 VPS 上验证完整安装及重启后 SSH 登录。
